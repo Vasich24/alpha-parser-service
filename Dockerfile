@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Встановлюємо системні залежності, необхідні для Playwright Chromium
+# Установлення всіх необхідних залежностей для Playwright Chromium
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -30,22 +30,23 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libdrm2 \
     libxfixes3 \
+    libgbm1 \
     xdg-utils \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Створюємо робочу директорію
+# Робоча директорія
 WORKDIR /app
 
-# Копіюємо package.json та встановлюємо залежності
+# Копіюємо package.json + встановлюємо залежності
 COPY package*.json ./
 RUN npm install
 
-# Копіюємо увесь проєкт
+# Копіюємо решту коду
 COPY . .
 
-# Встановлюємо лише Chromium для Playwright
+# Встановлюємо тільки Chromium
 RUN npx playwright install chromium
 
-# Запуск проєкту
+# Запускаємо додаток
 CMD ["npm", "start"]
