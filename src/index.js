@@ -36,6 +36,12 @@ function processQueue() {
   const next = queue.shift();
   active++;
   next();
+
+  setTimeout(() => {
+    if (queue.length > 0) {
+      processQueue();
+    }
+  }, 2000);
 }
 
 app.get('/api/wallet-info', async (req, res) => {
@@ -62,24 +68,37 @@ app.get('/api/wallet-info', async (req, res) => {
 
 async function getAlphaStats(address) {
   const url = `https://www.bn-alpha.site/${address}`;
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  let browser;
 
-  await page.goto(url, { waitUntil: 'networkidle' });
-  await page.waitForSelector('p.text-lg.font-medium');
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-dev-shm-usage']
+    });
 
-  const data = await page.evaluate(() => {
-    const list = Array.from(document.querySelectorAll('p.text-lg.font-medium')).map(e => e.textContent.trim());
-    const profit = document.querySelector('p.text-lg.font-medium.text-red-600')?.textContent.trim() || null;
-    return {
-      volume: list[0] || null,
-      points: list[1] || null,
-      profit
-    };
-  });
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle' });
+    await page.waitForSelector('p.text-lg.font-medium');
 
-  await browser.close();
-  return data;
+    const data = await page.evaluate(() => {
+      const list = Array.from(document.querySelectorAll('p.text-lg.font-medium')).map(e => e.textContent.trim());
+      const profit = document.querySelector('p.text-lg.font-medium.text-red-600')?.textContent.trim() || null;
+      return {
+        volume: list[0] || null,
+        points: list[1] || null,
+        profit
+      };
+    });
+
+    return data;
+  } catch (err) {
+    console.error('❌ Chromium error:', err.message);
+    throw err;
+  } finally {
+    if (browser) {
+      await browser.close().catch(e => console.error('❌ Close browser fail:', e.message));
+    }
+  }
 }
 
 app.listen(PORT, () => {

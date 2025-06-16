@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Установлення всіх необхідних залежностей для Playwright Chromium
+# Встановлюємо необхідні залежності для Chromium
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -35,18 +35,21 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
+# Встановлюємо змінну для використання локального Chromium
+ENV PLAYWRIGHT_BROWSERS_PATH=0
+
 # Робоча директорія
 WORKDIR /app
 
-# Копіюємо package.json + встановлюємо залежності
+# Копіюємо package.json і встановлюємо залежності
 COPY package*.json ./
 RUN npm install
 
-# Копіюємо решту коду
+# Копіюємо весь код
 COPY . .
 
-# Встановлюємо тільки Chromium
-RUN npx playwright install chromium
+# Встановлюємо Chromium з усіма залежностями (важливо для Railway)
+RUN npx playwright install --with-deps
 
-# Запускаємо додаток
+# Запускаємо сервер
 CMD ["npm", "start"]
