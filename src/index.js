@@ -80,7 +80,12 @@ async function getAlphaStats(address) {
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    } catch (err) {
+      console.error(`❌ Failed to navigate to ${url}:`, err.message);
+      throw err;
+    }
     await page.waitForSelector('p.text-lg.font-medium', { timeout: 10000 });
 
     const data = await page.evaluate(() => {
