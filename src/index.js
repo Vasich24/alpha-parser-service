@@ -8,10 +8,13 @@ const PORT = process.env.PORT || 8080;
 // Семафор: максимум 2 Chromium одночасно
 let active = 0;
 const queue = [];
-const MAX = 2;
+const MAX = 1;
 const cache = new Map();
 
 app.use(cors());
+
+process.on('unhandledRejection', err => console.error('UnhandledRejection:', err));
+process.on('uncaughtException', err => console.error('UncaughtException:', err));
 
 function enqueue(task) {
   return new Promise((resolve, reject) => {
@@ -77,8 +80,8 @@ async function getAlphaStats(address) {
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle' });
-    await page.waitForSelector('p.text-lg.font-medium');
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.waitForSelector('p.text-lg.font-medium', { timeout: 10000 });
 
     const data = await page.evaluate(() => {
       const list = Array.from(document.querySelectorAll('p.text-lg.font-medium')).map(e => e.textContent.trim());
